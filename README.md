@@ -42,8 +42,9 @@ If you use our paper in a way, please consider citing it.
 ```bibtex
 @article{Ozdayi_Kantarcioglu_Gel_2021, 
 title={Defending against Backdoors in Federated Learning with Robust Learning Rate}, 
-volume={35}, url={https://ojs.aaai.org/index.php/AAAI/article/view/17118}, 
-year={2021}, month={May}, pages={9268-9276}}
+volume={35}, number={10}, journal={Proceedings of the AAAI Conference on Artificial Intelligence}, 
+author={Ozdayi, Mustafa Safa and Kantarcioglu, Murat and Gel, Yulia R.}, 
+year={2021}, month={May}, pages={9268-9276} }
 ```
 
 
