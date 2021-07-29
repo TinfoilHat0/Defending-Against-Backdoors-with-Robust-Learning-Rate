@@ -27,6 +27,14 @@ python federated.py --data=fmnist --local_ep=2 --bs=256 --num_agents=10 --rounds
 ```
 When the argument ```--robustLR_threshold``` is set to a positive value, it activates the defense with the given threshold.
 
+If we look at the training plots, we should see something like the following by round 20.
+
+![Screenshot](performance.png) ![Screenshot](poison_acc.png)
+
+On the left, we see both no attack case (blue), and attack-with-no-defense (red) case has similar performances, and attack-with-RLR follows them closely for validation accuracy. For the backdoor accuracy however (right), attack-with-no-defense completely fails, where as RLR almost completely elimates the backdoor as evidenced by its accuracy.
+
+
+
 Apart from these, one can supply different trojan patterns, use different aggregation functions, and datasets. See ```src/options.py``` and ```src/runner.sh``` for more usage. One thing to note is, when Cifar10 is used, the backdoor pattern is partitioned between the corrupt agents to simulate what's called a [Distributed Backdoor Attack](https://openreview.net/forum?id=rkgyS0VFvr). See ```add_pattern_bd``` method in ```src/utils.py```.
 
 
