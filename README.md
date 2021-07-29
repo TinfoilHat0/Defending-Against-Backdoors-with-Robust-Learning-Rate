@@ -31,7 +31,7 @@ If we look at the training plots, we should see something like the following by 
 
 ![Screenshot](performance.png) ![Screenshot](poison_acc.png)
 
-On the left, we see both no attack case (blue), and attack-with-no-defense (red) case has similar performances, and attack-with-RLR follows them closely for validation accuracy. For the backdoor accuracy however (right), attack-with-no-defense completely fails, where as RLR almost completely elimates the backdoor as evidenced by its accuracy.
+On the left, we see both no attack case (blue), and attack-with-no-defense (red) case has similar performances, and attack-with-RLR (orange) follows them closely for validation accuracy. For the backdoor accuracy however (right), attack-with-no-defense completely fails, where as RLR almost completely elimates the backdoor as evidenced by its accuracy.
 
 
 
