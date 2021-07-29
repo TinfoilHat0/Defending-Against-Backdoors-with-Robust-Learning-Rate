@@ -3,7 +3,7 @@
 This is the code for the AAAI 2021 paper [Defending Against Backdoors in Federated Learning with Robust Learning Rate](https://arxiv.org/abs/2007.03767). 
 It has been tested with PyTorch 1.9.0.
 
-To use the code, first get [the datasets](https://utdallas.box.com/s/z4qd84e8wuaee0drxx9q0ms120zwxsgv), and unzip it under the parent folder.
+To use the code, first get [the datasets](https://utdallas.box.com/s/z4qd84e8wuaee0drxx9q0ms120zwxsgv), and unzip them under the parent folder.
 You can see some example usage in ```src/runner.sh``` and use this script to run your own experiments. For example, the first lane says:
 
 ```bash
