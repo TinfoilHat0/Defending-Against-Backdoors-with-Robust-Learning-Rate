@@ -1,75 +1,42 @@
 #!/bin/bash
 
-# 5-> 7 on FMNIST
 
 echo 'Calling scripts!'
 
-rm -rf logs
-
-
-
-python federated.py &
-python federated.py --num_corrupt=1 --attack=2 --poison_frac=0.5 &
-python federated.py --num_corrupt=1 --attack=2 --poison_frac=0.5 --robust_lr=1 --robustLR_threshold=4 --device=cuda:1 
-
-
-# # 20 perc.
-# python federated.py --attack=2 --num_corrupt=8 --poison_frac=0.5 &
-# python federated.py --attack=2 --num_corrupt=8 --poison_frac=0.5 --robust_lr=2 --robustLR_threshold=13 --device=cuda:1 &
-
-
-
-# # 30. perc
-# python federated.py --attack=2 --num_corrupt=12 --poison_frac=0.5 &
-# python federated.py --attack=2 --num_corrupt=12 --poison_frac=0.5 --robust_lr=2 --robustLR_threshold=17 --device=cuda:1 &
-
-
-
-# # 40. perc
-# python federated.py --attack=2 --num_corrupt=16 --poison_frac=0.5 &
-# python federated.py --attack=2 --num_corrupt=16 --poison_frac=0.5 --robust_lr=2 --robustLR_threshold=21  --device=cuda:1
+rm -rf logs # toggle this off if you want to keep old logs each time you run new experiments
 
 
 
 
+# fedAvg without any attack
+python federated.py --data=fmnist --local_ep=2 --bs=256 --num_agents=10 --rounds=200 &
+
+# fedAvg with backdoor attack (plus pattern is used by default, see options.py)
+python federated.py --data=fmnist --local_ep=2 --bs=256 --num_agents=10 --rounds=200 --num_corrupt=1 --poison_frac=0.5 &
+
+# fedAvg with backdoor attack, and robust learning rate is used 
+python federated.py --data=fmnist --local_ep=2 --bs=256 --num_agents=10 --rounds=200 --num_corrupt=1 --poison_frac=0.5 --robustLR_threshold=4 --device=cuda:1
 
 
 
 
+python federated.py --data=cifar10 --local_ep=2 --bs=256 --num_agents=40 --rounds=200 &
 
-<<comment
-#baseline
-python federated.py --aggr=avg --pattern_type=plus --device=cuda:0 &
-python federated.py --aggr=avg --pattern_type=apple --device=cuda:1 &
-python federated.py --aggr=avg --pattern_type=copyright --device=cuda:0 &
-python federated.py --aggr=avg --pattern_type=square --device=cuda:1
+# when we attack cifar10, we do it with distributed backdoor attack, that is, backdoor image is partitioned between attackers (see attack_pattern_bd in utils.py)
+python federated.py --data=cifar10 --local_ep=2 --bs=256 --num_agents=40 --rounds=200 --num_corrupt=4 --poison_frac=0.5 &
 
-echo 'Baseline has finished!'
+python federated.py --data=cifar10 --local_ep=2 --bs=256 --num_agents=40 --rounds=200 --num_corrupt=4 --poison_frac=0.5 --robustLR_threshold=8 --device=cuda:1 &
 
 
-# Attack under different clipping and noise values
-for pattern in plus apple copyright square
-do
-    for clip in 0 2 4 6
-    do
-        for noise in 0 0.0001 0.001 0.005 
-        do
-            # fedavg with and without robust lr
-            python federated.py --aggr=avg --attack=2 --poison_frac=0.5 --robust_lr=2 --robustLR_threshold=4 --clip=$clip --noise=$noise --projected_gd=1 --pattern_type=$pattern --device=cuda:0 &
-            python federated.py --aggr=avg --attack=2 --poison_frac=0.5 --clip=$clip --noise=$noise --projected_gd=1 --pattern_type=$pattern --device=cuda:1 &
 
-            # comed with and without robust lr
-            python federated.py --aggr=comed --attack=2 --poison_frac=0.5 --robust_lr=2 --robustLR_threshold=4 --clip=$clip --noise=$noise --projected_gd=1 --pattern_type=$pattern --device=cuda:0 &
-            python federated.py --aggr=comed --attack=2 --poison_frac=0.5 --clip=$clip --noise=$noise --projected_gd=1 --pattern_type=$pattern --device=cuda:1 &
 
-            # sign aggregation with and without robust lr
-            python federated.py --aggr=sign --server_lr=0.001 --attack=2 --poison_frac=0.5 --robust_lr=2 --robustLR_threshold=4 --clip=$clip --noise=$noise --projected_gd=1 --pattern_type=$pattern --device=cuda:1 &
-            python federated.py --aggr=sign --server_lr=0.001 --attack=2 --poison_frac=0.5 --clip=$clip --noise=$noise --projected_gd=1 --pattern_type=$pattern --device=cuda:0 
- 
-        done  
-    done
-done
-comment
+# NIID experiments, agent numbers are configured for the FEDEMNIST dataset
+python federated.py --data=fedemnist --num_agents=3383 --agent_frac=0.01 --local_ep=10 --bs=64 --rounds=500  --snap=5 &
+
+python federated.py --data=fedemnist --num_agents=3383 --agent_frac=0.01 --num_corrupt=338 --poison_frac=0.5 --local_ep=10 --bs=64 --rounds=500 --snap=5  &
+
+python federated.py --data=fedemnist --num_agents=3383 --agent_frac=0.01 --num_corrupt=338 --poison_frac=0.5 --robustLR_threshold=8 --local_ep=10 --bs=64 --rounds=500 --snap=5 --device=cuda:1
+
 
 
 

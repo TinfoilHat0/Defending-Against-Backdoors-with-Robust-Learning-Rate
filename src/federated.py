@@ -13,6 +13,7 @@ from torch.utils.data import DataLoader
 import torch.nn as nn
 from time import ctime
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
+from utils import H5Dataset
 
 torch.backends.cudnn.enabled = True
 torch.backends.cudnn.benchmark = True
@@ -20,15 +21,13 @@ torch.backends.cudnn.benchmark = True
 if __name__ == '__main__':
     args = args_parser()
     args.server_lr = args.server_lr if args.aggr == 'sign' else 1.0
-    args.poison_frac = args.poison_frac if args.attack == 2 else 0
-    args.projected_gd = args.projected_gd if args.clip else 0
     utils.print_exp_details(args)
     
     # data recorders
     file_name = f"""time:{ctime()}-clip_val:{args.clip}-noise_std:{args.noise}"""\
             + f"""-aggr:{args.aggr}-s_lr:{args.server_lr}-num_cor:{args.num_corrupt}"""\
-            + f"""-robustLR:{args.robust_lr}-thrs_robustLR:{args.robustLR_threshold}"""\
-            + f"""-num_corrupt:{args.num_corrupt}-projected_gd:{args.projected_gd}-pttrn:{args.pattern_type}"""
+            + f"""thrs_robustLR:{args.robustLR_threshold}"""\
+            + f"""-num_corrupt:{args.num_corrupt}-pttrn:{args.pattern_type}"""
     writer = SummaryWriter('logs/' + file_name)
     cum_poison_acc_mean = 0
         
@@ -61,12 +60,13 @@ if __name__ == '__main__':
     aggregator = Aggregation(agent_data_sizes, n_model_params, poisoned_val_loader, args, writer)
     criterion = nn.CrossEntropyLoss().to(args.device)
 
+
     # training loop
     for rnd in tqdm(range(1, args.rounds+1)):
         rnd_global_params = parameters_to_vector(global_model.parameters()).detach()
         agent_updates_dict = {}
         for agent_id in np.random.choice(args.num_agents, math.floor(args.num_agents*args.agent_frac), replace=False):
-            update = agents[agent_id].local_train(global_model, criterion, cur_round=rnd)
+            update = agents[agent_id].local_train(global_model, criterion)
             agent_updates_dict[agent_id] = update
             # make sure every agent gets same copy of the global model in a round (i.e., they don't affect each other's training)
             vector_to_parameters(copy.deepcopy(rnd_global_params), global_model.parameters())
@@ -74,7 +74,7 @@ if __name__ == '__main__':
         aggregator.aggregate_updates(global_model, agent_updates_dict, rnd)
         
         
-        # inference in every few rounds
+        # inference in every args.snap rounds
         if rnd % args.snap == 0:
             with torch.no_grad():
                 val_loss, (val_acc, val_per_class_acc) = utils.get_loss_n_accuracy(global_model, criterion, val_loader, args)

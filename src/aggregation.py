@@ -1,7 +1,6 @@
 import torch
 import models
 from torch.nn.utils import vector_to_parameters, parameters_to_vector
-from torch.distributions.normal import Normal
 import numpy as np
 from copy import deepcopy
 from torch.nn import functional as F
@@ -14,14 +13,13 @@ class Aggregation():
         self.server_lr = args.server_lr
         self.n_params = n_params
         self.poisoned_val_loader = poisoned_val_loader
-        self.normal_dist = Normal(0, args.noise*args.clip) # mean, std.dev
         self.cum_net_mov = 0
         
          
     def aggregate_updates(self, global_model, agent_updates_dict, cur_round):
         # adjust LR if robust LR is selected
         lr_vector = torch.Tensor([self.server_lr]*self.n_params).to(self.args.device)
-        if self.args.robust_lr:
+        if self.args.robustLR_threshold > 0:
             lr_vector = self.compute_robustLR(agent_updates_dict)
         
         
@@ -34,11 +32,11 @@ class Aggregation():
             aggregated_updates = self.agg_sign(agent_updates_dict)
             
         if self.args.noise > 0:
-            aggregated_updates.add_(self.normal_dist.sample( (self.n_params,) ).to(self.args.device))
+            aggregated_updates.add_(torch.normal(mean=0, std=self.args.noise*self.args.clip, size=(self.n_params,)).to(self.args.device))
         
                 
         cur_global_params = parameters_to_vector(global_model.parameters())
-        new_global_params =  (cur_global_params + lr_vector*(aggregated_updates - self.args.server_wd*cur_global_params)).float() 
+        new_global_params =  (cur_global_params + lr_vector*aggregated_updates).float() 
         vector_to_parameters(new_global_params, global_model.parameters())
         
         # some plotting stuff if desired

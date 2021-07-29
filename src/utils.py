@@ -55,7 +55,7 @@ class DatasetSplit(Dataset):
 
 
 
-def distribute_data(dataset, args, n_classes=10):
+def distribute_data(dataset, args, n_classes=10, class_per_agent=10):
     if args.num_agents == 1:
         return {0:range(len(dataset))}
     
@@ -72,7 +72,7 @@ def distribute_data(dataset, args, n_classes=10):
         labels_dict[k].append(v)
         
     # split indexes to shards
-    shard_size = len(dataset) // (args.num_agents * args.class_per_agent)
+    shard_size = len(dataset) // (args.num_agents * class_per_agent)
     slice_size = (len(dataset) // n_classes) // shard_size    
     for k, v in labels_dict.items():
         labels_dict[k] = chunker_list(v, slice_size)
@@ -82,7 +82,7 @@ def distribute_data(dataset, args, n_classes=10):
     for user_idx in range(args.num_agents):
         class_ctr = 0
         for j in range(0, n_classes):
-            if class_ctr == args.class_per_agent:
+            if class_ctr == class_per_agent:
                     break
             elif len(labels_dict[j]) > 0:
                 dict_users[user_idx] += labels_dict[j][0]
@@ -165,9 +165,15 @@ def poison_dataset(dataset, args, data_idxs=None, poison_all=False, agent_idx=-1
     poison_frac = 1 if poison_all else args.poison_frac    
     poison_idxs = random.sample(all_idxs, floor(poison_frac*len(all_idxs)))
     for idx in poison_idxs:
-        clean_img = dataset.data[idx]
+        if args.data == 'fedemnist':
+            clean_img = dataset.inputs[idx]
+        else:
+            clean_img = dataset.data[idx]
         bd_img = add_pattern_bd(clean_img, args.data, pattern_type=args.pattern_type, agent_idx=agent_idx)
-        dataset.data[idx] = torch.tensor(bd_img)
+        if args.data == 'fedemnist':
+             dataset.inputs[idx] = torch.tensor(bd_img)
+        else:
+            dataset.data[idx] = torch.tensor(bd_img)
         dataset.targets[idx] = args.target_class    
     return
 
@@ -178,7 +184,7 @@ def add_pattern_bd(x, dataset='cifar10', pattern_type='square', agent_idx=-1):
     """
     x = np.array(x.squeeze())
     
-    # if cifar is selected, we're doing a distributed backdoor attack (i.e., portions of trojan pattern is split between agents)
+    # if cifar is selected, we're doing a distributed backdoor attack (i.e., portions of trojan pattern is split between agents, only works for plus)
     if dataset == 'cifar10':
         if pattern_type == 'plus':
             start_idx = 5
@@ -285,7 +291,6 @@ def print_exp_details(args):
     print(f'    Aggregation Function: {args.aggr}')
     print(f'    Number of agents: {args.num_agents}')
     print(f'    Fraction of agents: {args.agent_frac}')
-    print(f'    Num. of class per agent: {args.class_per_agent}')
     print(f'    Batch size: {args.bs}')
     print(f'    Client_LR: {args.client_lr}')
     print(f'    Server_LR: {args.server_lr}')
@@ -293,10 +298,7 @@ def print_exp_details(args):
     print(f'    RobustLR_threshold: {args.robustLR_threshold}')
     print(f'    Noise Ratio: {args.noise}')
     print(f'    Number of corrupt agents: {args.num_corrupt}')
-    print(f'    Attack type: {args.attack}')
-    print(f'    Robust LR: {args.robust_lr}')
     print(f'    Poison Frac: {args.poison_frac}')
     print(f'    Clip: {args.clip}')
-    print(f'    Projected_GD: {args.projected_gd}')
     print('======================================')
     
