@@ -38,7 +38,8 @@ On the left, we see both no attack case (blue), and attack-with-no-defense (red)
 Apart from these, one can supply different trojan patterns, use different aggregation functions, and datasets. See ```src/options.py``` and ```src/runner.sh``` for more usage. One thing to note is, when Cifar10 is used, the backdoor pattern is partitioned between the corrupt agents to simulate what's called a [Distributed Backdoor Attack](https://openreview.net/forum?id=rkgyS0VFvr). See ```add_pattern_bd``` method in ```src/utils.py```.
 
 
-If you use our paper in a way, please consider citing it.
+## Citation
+
 ```bibtex
 @article{Ozdayi_Kantarcioglu_Gel_2021, 
 title={Defending against Backdoors in Federated Learning with Robust Learning Rate}, 
